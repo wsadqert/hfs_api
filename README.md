@@ -4,24 +4,6 @@
 
 ## TODO
 
-Getting:
+<span style="color:red">✘ copy</span> (not supported by HFS)
 
-<span style="color:#00ff00">✔ authorization</span>\
-<span style="color:#00ff00">✔ get_cookies</span>\
-<span style="color:yellow">... list</span>\
-<span style="color:#00ff00">✔ exist</span>
-
-Modifying:
-
-<span style="color:#00ff00">✔ set_cookies</span>\
-<span style="color:#00ff00">✔ create_folder</span>\
-<span style="color:#00ff00">✔ delete</span>\
-<span style="color:#00ff00">✔ upload_file</span>\
-<span style="color:#00ff00">✔ upload_folder</span>\
-<span style="color:#00ff00">✔ rename</span>\
-<span style="color:red">✘ copy</span> (not supported by HFS)\
-<span style="color:#00ff00">✔ move</span>
-
-Administrating:
-
-*none*
+Current progress on [Google Drive](https://docs.google.com/spreadsheets/d/1TeDjcjzOAbwglnRVvOMfmi6CD4s20DBh0OD-JSJ7RDc/edit?usp=sharing).

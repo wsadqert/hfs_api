@@ -1,11 +1,16 @@
 import code
+import sys
 from typing import Final
 import os
+import shlex
 import colorama
+import signal
+from rich.traceback import install
 
 from hfs_api import HFS, UploadMode
-from hfs_api.output import colorize_status_code
+from hfs_api.output import colorize_status_code, ls
 
+install(show_locals=True, width=300)
 colorama.init(autoreset=True)
 Fore = colorama.Fore
 
@@ -15,22 +20,50 @@ hfs = HFS(domain)
 hfs.authorize("admin", os.environ["ADMIN_PASSWORD"])
 print(hfs.get_cookies())
 
+signal.signal(signal.SIGINT, lambda _s, _f: (print(f"\n{Fore.LIGHTRED_EX}[E] KeyboardInterrupt"), sys.exit(0)))
+
+N = 10
+
 
 def mainloop():
 	while True:
-		raw_input = input(f"{Fore.LIGHTBLUE_EX}>> ").split()
+		try:
+			raw_input = shlex.split(input(f"{Fore.LIGHTBLUE_EX}>> "))
+		except (EOFError, UnicodeError):
+			print(f"{Fore.LIGHTRED_EX}[E] EOF Error")
+			sys.exit(0)
+		print(Fore.RESET)
+
+		if not raw_input:  # empty input
+			continue
+
+		raw_input.extend([''] * (N - len(raw_input)))
+
 		command = raw_input[0]
 
 		match command:
 			case "upload":
 				local_path = raw_input[1]
 				remote_path = raw_input[2]
-				exists = UploadMode.SKIP
+
+				if '' in (local_path, remote_path):
+					print(Fore.LIGHTRED_EX + "[E] Not enough arguments")
+					continue
+
+				exists = UploadMode.SKIP.value
 				if len(raw_input) == 4:
+					match raw_input[3]:
+						case "skip":
+							exists = UploadMode.SKIP.value
+						case "overwrite":
+							exists = UploadMode.OVERWRITE.value
+						case _:
+							print(Fore.LIGHTRED_EX + "[E] Invalid 'exists' value")
+							continue
 					exists = {
-						"skip": UploadMode.SKIP,
-						"overwrite": UploadMode.OVERWRITE
-					}.get(raw_input[3], UploadMode.SKIP)
+						"skip": UploadMode.SKIP.value,
+						"overwrite": UploadMode.OVERWRITE.value
+					}.get(raw_input[3], UploadMode.SKIP.value)
 
 				normpath = os.path.normpath(local_path).replace(os.sep, '/')
 				hfs.upload(local_path, remote_path, exists=exists)
@@ -38,11 +71,20 @@ def mainloop():
 			case "mkdir":
 				name = raw_input[1]
 				normpath = os.path.normpath(name).split(os.sep)
-				resp = hfs.create_folder(normpath[-1], root='/' + '/'.join(normpath[:-1]))
+				resp = hfs._create_folder_one(normpath[-1], root='/' + '/'.join(normpath[:-1]))
 				print(colorize_status_code(resp.status_code), resp.text)
 
 			case "ls" | "dir":
 				comp = raw_input[1]
+
+				ls_path = '/'
+				if len(raw_input) == 3:
+					ls_path = raw_input[2]
+				match comp:
+					case "local":
+						raise NotImplementedError
+					case "remote":
+						ls(hfs.list(ls_path))
 
 			case "exist" | "exists" | "is":
 				name = raw_input[1]
